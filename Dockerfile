@@ -29,4 +29,4 @@ COPY . /app/
 EXPOSE 8000
  
 # Run Django’s development server
-CMD ["python", "Task1/manage.py", "runserver", "0.0.0.0:8000" , "--noreload"]
+CMD ["python", "Task1/manage.py", "runserver", "0.0.0.0:8000"]
