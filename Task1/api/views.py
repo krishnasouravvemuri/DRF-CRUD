@@ -51,7 +51,7 @@ class CreateUser(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return ApiResponse(serializer.data, status.HTTP_201_CREATED, "User created successfully").build()
+            return ApiResponse(None, status.HTTP_201_CREATED, "User created successfully").build()
 
         return ApiResponse(serializer.errors, status.HTTP_400_BAD_REQUEST, "Validation error").build()
 
@@ -188,6 +188,7 @@ class Login(APIView):
         )
 
         return ApiResponse({"token": token}, 200, "Login successful").build()
+
 
 class Logout(APIView):
 
