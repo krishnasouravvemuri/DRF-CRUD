@@ -1,32 +1,34 @@
-# Use the official Python runtime image
-FROM python:3.13  
- 
-# Create the app directory
+# Use official Python image
+FROM python:3.13
+
+# Create base directory
 RUN mkdir /app
- 
-# Set the working directory inside the container
+
+# Set base workdir
 WORKDIR /app
- 
-# Set environment variables 
-# Prevents Python from writing pyc files to disk
+
+# Python settings
 ENV PYTHONDONTWRITEBYTECODE=1
-#Prevents Python from buffering stdout and stderr
-ENV PYTHONUNBUFFERED=1 
- 
+ENV PYTHONUNBUFFERED=1
+
 # Upgrade pip
-RUN pip install --upgrade pip 
- 
-# Copy the Django project  and install dependencies
-COPY requirements.txt  /app/
- 
-# run this command to install all dependencies 
+RUN pip install --upgrade pip
+
+# Copy requirements first (better caching)
+COPY requirements.txt .
+
+# Install deps
 RUN pip install -r requirements.txt
- 
-# Copy the Django project to the container
-COPY . /app/
- 
-# Expose the Django port
-EXPOSE 8000
- 
-# Run Django’s development server
-CMD ["python", "Task1/manage.py", "runserver", "0.0.0.0:8000"]
+RUN pip install psycopg2-binary
+
+# Copy project
+COPY . .
+
+# move working dir to Django root
+WORKDIR /app/Task1
+
+# Expose port
+EXPOSE 8001
+
+# Start server
+CMD ["uvicorn", "Task1.asgi:application", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]

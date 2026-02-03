@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,12 +26,12 @@ load_dotenv(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = "django-insecure-+-m*t-m8_v@q!z&zqh^82n)8zd)5)v0i&om6n7@*759l1+tt**"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '0.0.0.0']
 
 # Application definition
 
@@ -40,19 +43,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'app1',
     'api',
+    'app1',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'app1.middleware.AuthMiddleware'
+    'app1.middleware.AuthMiddleware',
 ]
 
 ROOT_URLCONF = 'Task1.urls'
@@ -81,11 +85,11 @@ WSGI_APPLICATION = 'Task1.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': "mydb",
+        'USER': "postgres",
+        'PASSWORD': "postgres",
+        'HOST': "db",
+        'PORT': "5432",
     }
 }
 
@@ -127,4 +131,4 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
-TOKEN_EXPIRY_HOURS = int(os.getenv("TOKEN_EXPIRY_HOURS", 1))
+TOKEN_EXPIRY_HOURS = 1
