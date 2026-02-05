@@ -9,8 +9,8 @@ from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
 
-from app1.models import (UserInfo,UserLoginInfo,TeamInfo,AllUserInfo_View)
-from api.serializers import UserInfoSerializer
+from app1.models import (UserInfo,UserLoginInfo,TeamInfo,AllUserInfo_View,AllTeamInfo_View)
+from api.serializers import UserInfoSerializer , TeamInfoSerializer , TeamUsersSerializer
 
 
 
@@ -28,6 +28,7 @@ class ApiResponse:
                 "data": self.response_data},
                 status=self.status_code
             )
+
 
 def verify_token(request):
     token = request.headers.get("Authorization")
@@ -83,6 +84,7 @@ class GetUsers(APIView):
         cleaned = [remove_password(u) for u in serializer.data]
 
         return ApiResponse(cleaned, 200, "Users fetched successfully").build()
+
 
 class UpdateUser(APIView):
 
@@ -177,17 +179,13 @@ class Logout(APIView):
 
         token = request.headers.get("Authorization")
 
-        session = UserLoginInfo.objects.filter(
-            jwt_token=token,
-            user__user_name=username,
-            is_active=True
-        ).first()
+        loginInfo = UserLoginInfo.objects.filter(jwt_token=token,user__user_name=username,is_active=True).first()
 
-        if not session:
+        if not loginInfo:
             return ApiResponse(None, 401, "Already logged out").build()
 
-        session.is_active = False
-        session.save()
+        loginInfo.is_active = False
+        loginInfo.save()
 
         return ApiResponse(None, 200, "Logged out successfully").build()
 
@@ -200,22 +198,72 @@ class UserInfoView(APIView):
             return resp
 
         data = list(
-            AllUserInfo_View.objects.all().values()
+            AllUserInfo_View.objects.values(
+                "user_id",
+                "user_name",
+                "user_email",
+                "user_date_of_creation",
+                "user_last_passcode_update",
+                "user_active",
+                "user_deleted",
+                "user_role",
+                "login_session_id",
+                "login_date_time",
+                "jwt_token",
+                "login_is_active",
+                "created_at",
+                "expires_at",
+            )
         )
-
-        for d in data:
-            d.pop("user_password", None)
 
         return ApiResponse(data, 200, "User info view fetched").build()
 
 
-class TeamInfoView(APIView):
+class RegisterTeam(APIView):
 
     def get(self, request):
         ok, resp = verify_token(request)
         if not ok:
             return resp
 
-        teams = TeamInfo.objects.filter(team_deleted=0).values()
+    def post(self , request):
+        team_info = request.data.copy()
+        Serializer = TeamInfoSerializer(data = team_info)
 
-        return ApiResponse(list(teams), 200, "Teams fetched").build()
+        if Serializer.is_valid():
+            Serializer.save()
+            return ApiResponse(None, 201, "Team created successfully").build()
+        return ApiResponse(Serializer.errors , 400 , "Validation Error").build()
+
+
+class RegisterTeamMates(APIView):
+    
+    def get(self , request):
+        ok, resp = verify_token(request)
+        if not ok:
+            return resp
+        
+    def post(self , request , team_name):    
+        try:
+            team = TeamInfo.objects.get(team_name = team_name)
+        except TeamInfo.DoesNotExist:
+            return ApiResponse(None , 400 , "Team not found").build()
+        
+        data = request.data.copy()
+        Serializer = TeamUsersSerializer(data = data)
+
+        if Serializer.is_valid():
+            Serializer.save()
+            return ApiResponse(None, 201, "Team created successfully").build()
+        return ApiResponse(Serializer.errors , 400 , "Validation Error").build()
+        
+        
+class GetTeamInfo(APIView):
+
+    def get(self , request):
+        ok, resp = verify_token(request)
+        if not ok:
+            return resp
+        data = list(AllTeamInfo_View.objects.all().values())
+
+        return ApiResponse(data, 200, "Team info view fetched").build()

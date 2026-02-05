@@ -33,11 +33,6 @@ FROM app1_userinfo ui
 LEFT JOIN app1_userlogininfo li
     ON li.user_id = ui.user_id
 
-LEFT JOIN app1_teamusers tu
-    ON tu.user_id = ui.user_id
-
-LEFT JOIN app1_teaminfo ti
-    ON ti.team_id = tu.team_id;
 """
 
 

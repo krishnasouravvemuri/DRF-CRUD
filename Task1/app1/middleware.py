@@ -70,21 +70,18 @@ class AuthMiddleware:
         except jwt.InvalidTokenError:
             return JsonResponse({"error": "Invalid token"}, status=401)
 
-        # check session
+        # check loginInfo
         try:
-            session = UserLoginInfo.objects.get(
-                jwt_token=token,
-                is_active=True
-            )
+            loginInfo = UserLoginInfo.objects.get(jwt_token=token,is_active=True)
         except UserLoginInfo.DoesNotExist:
             return JsonResponse({"error": "Session inactive"}, status=401)
 
         # expiry check
-        if session.expires_at and session.expires_at < timezone.now():
-            session.is_active = False
-            session.save()
-            return JsonResponse({"error": "Session expired"}, status=401)
+        if loginInfo.expires_at and loginInfo.expires_at < timezone.now():
+            loginInfo.is_active = False
+            loginInfo.save()
+            return JsonResponse({"error": "loginInfo expired"}, status=401)
 
-        request.user = session.user
+        request.user = loginInfo.user
 
         return self.get_response(request)

@@ -26,7 +26,7 @@ class UserLoginInfo(models.Model):
     login_date_time = models.DateTimeField(auto_now_add=True)
     jwt_token = models.TextField(unique=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True) 
     expires_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self): 
@@ -70,7 +70,18 @@ class AllUserInfo_View(models.Model):
     login_is_active = models.BooleanField(null=True)
     created_at = models.DateTimeField(null=True)
     expires_at = models.DateTimeField(null=True)
-    team_id = models.CharField(max_length=10, null=True)
+    
+    
+    class Meta: 
+        managed = False 
+        db_table = "alluserinfo_view"
+
+    def __str__(self): 
+        return self.user_name
+    
+class AllTeamInfo_View(models.Model):
+    user_id = models.UUIDField(primary_key=True)
+    team_id = models.CharField(max_length=10)
     team_name = models.CharField(max_length=15, null=True)
     team_created_by = models.CharField(max_length=10, null=True)
     team_created_datetime = models.DateTimeField(null=True)
@@ -79,10 +90,10 @@ class AllUserInfo_View(models.Model):
     team_user_date_of_creation = models.DateTimeField(null=True)
     team_user_active = models.PositiveSmallIntegerField(null=True)
     team_user_deleted = models.PositiveSmallIntegerField(null=True)
-    
+
     class Meta: 
         managed = False 
-        db_table = "AllUserInfo_View"
+        db_table = "allteaminfo_view"
 
     def __str__(self): 
         return self.user_name

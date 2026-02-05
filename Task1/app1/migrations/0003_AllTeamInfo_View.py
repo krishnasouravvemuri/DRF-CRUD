@@ -3,7 +3,7 @@
 from django.db import migrations
 
 VIEW_SQL = """
-CREATE OR REPLACE VIEW AllTableInfo_View AS
+CREATE OR REPLACE VIEW AllTeamInfo_View AS
 
 SELECT
     
@@ -32,7 +32,7 @@ LEFT JOIN app1_teaminfo ti
 
 
 DROP_SQL = """
-DROP VIEW IF EXISTS AllTableInfo_View;
+DROP VIEW IF EXISTS AllTeamInfo_View;
 """
 
 class Migration(migrations.Migration):
