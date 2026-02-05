@@ -9,8 +9,8 @@ from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
 
-from app1.models import UserInfo, UserDetail, UserLoginInfo
-from api.serializers import UserInfoSerializer, UserDetailSerializer
+from app1.models import UserInfo , UserLoginInfo
+from api.serializers import UserInfoSerializer
 
 
 # =====================================
@@ -78,47 +78,6 @@ class CreateUser(APIView):
         if serializer.is_valid():
             serializer.save()
             return ApiResponse(None, 201, "User created successfully").build()
-
-        return ApiResponse(serializer.errors, 400, "Validation error").build()
-
-
-# =====================================
-# USER DETAILS (AUTH REQUIRED)
-# =====================================
-class UserDetails(APIView):
-
-    def get_object(self, username):
-        try:
-            return UserInfo.objects.get(username=username)
-        except UserInfo.DoesNotExist:
-            return None
-
-    def get(self, request, username):
-        ok, resp = verify_token(request)
-        if not ok:
-            return resp
-
-        user = self.get_object(username)
-        if not user:
-            return ApiResponse(None, 404, "User not found").build()
-
-        serializer = UserInfoSerializer(user)
-        return ApiResponse(remove_password(serializer.data), 200, "User retrieved successfully").build()
-
-    def post(self, request, username):
-        ok, resp = verify_token(request)
-        if not ok:
-            return resp
-
-        user = self.get_object(username)
-        if not user:
-            return ApiResponse(None, 404, "User not found").build()
-
-        serializer = UserDetailSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save(user=user)
-            return ApiResponse(serializer.data, 201, "User details added successfully").build()
 
         return ApiResponse(serializer.errors, 400, "Validation error").build()
 
