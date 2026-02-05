@@ -84,4 +84,5 @@ class AllUserInfo_View(models.Model):
         managed = False 
         db_table = "AllUserInfo_View"
 
-    def __str__(self): return self.user_name
+    def __str__(self): 
+        return self.user_name
