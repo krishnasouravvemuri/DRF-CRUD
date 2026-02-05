@@ -8,4 +8,6 @@ urlpatterns = [
     path('delete_user/<str:username>', DeleteUser.as_view(), name='delete'),
     path('login', Login.as_view(), name='login'),
     path('logout/<str:username>', Logout.as_view(), name='logout'),
+    path('user-info', UserInfoView.as_view()),
+    path('team-info', TeamInfoView.as_view()),
 ]

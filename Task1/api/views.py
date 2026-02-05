@@ -9,13 +9,11 @@ from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
 
-from app1.models import UserInfo , UserLoginInfo
+from app1.models import (UserInfo,UserLoginInfo,TeamInfo,AllUserInfo_View)
 from api.serializers import UserInfoSerializer
 
 
-# =====================================
-# Common API Response
-# =====================================
+
 class ApiResponse:
     def __init__(self, response_data=None, status_code=200, message=""):
         self.response_data = response_data
@@ -24,20 +22,13 @@ class ApiResponse:
 
     def build(self):
         return Response(
-            {
-                "meta": {
-                    "code": self.status_code,
-                    "message": self.message
-                },
-                "data": self.response_data
-            },
-            status=self.status_code
-        )
+            {"meta": 
+               {"code": self.status_code,
+                "message": self.message},
+                "data": self.response_data},
+                status=self.status_code
+            )
 
-
-# =====================================
-# 🔐 HELPER (just a small function)
-# =====================================
 def verify_token(request):
     token = request.headers.get("Authorization")
 
@@ -55,23 +46,20 @@ def verify_token(request):
 
 
 def remove_password(data):
-    data.pop("password", None)
+    data.pop("user_password", None)
     return data
 
 
-# =====================================
-# CREATE USER (NO AUTH)
-# =====================================
 class CreateUser(APIView):
 
     def post(self, request):
-
         data = request.data.copy()
-        password = data.get("password")
+
+        password = data.get("user_password")
 
         if password:
             hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-            data["password"] = hashed
+            data["user_password"] = hashed
 
         serializer = UserInfoSerializer(data=data)
 
@@ -82,9 +70,6 @@ class CreateUser(APIView):
         return ApiResponse(serializer.errors, 400, "Validation error").build()
 
 
-# =====================================
-# GET USERS (AUTH REQUIRED)
-# =====================================
 class GetUsers(APIView):
 
     def get(self, request):
@@ -92,36 +77,17 @@ class GetUsers(APIView):
         if not ok:
             return resp
 
-        users = UserInfo.objects.all()
+        users = UserInfo.objects.filter(user_deleted=0)
         serializer = UserInfoSerializer(users, many=True)
 
         cleaned = [remove_password(u) for u in serializer.data]
 
         return ApiResponse(cleaned, 200, "Users fetched successfully").build()
 
-
-# =====================================
-# UPDATE USER (AUTH REQUIRED)
-# =====================================
 class UpdateUser(APIView):
 
     def get_object(self, username):
-        try:
-            return UserInfo.objects.get(username=username)
-        except UserInfo.DoesNotExist:
-            return None
-
-    def get(self, request, username):
-        ok, resp = verify_token(request)
-        if not ok:
-            return resp
-
-        user = self.get_object(username)
-        if not user:
-            return ApiResponse(None, 404, "User not found").build()
-
-        serializer = UserInfoSerializer(user)
-        return ApiResponse(remove_password(serializer.data), 200, "User retrieved successfully").build()
+        return UserInfo.objects.filter(user_name=username).first()
 
     def patch(self, request, username):
         ok, resp = verify_token(request)
@@ -129,94 +95,79 @@ class UpdateUser(APIView):
             return resp
 
         user = self.get_object(username)
+
         if not user:
             return ApiResponse(None, 404, "User not found").build()
 
-        serializer = UserInfoSerializer(user, data=request.data, partial=True)
+        data = request.data.copy()
+
+        if "user_password" in data:
+            data["user_password"] = bcrypt.hashpw(
+                data["user_password"].encode(),
+                bcrypt.gensalt()
+            ).decode()
+
+        serializer = UserInfoSerializer(user, data=data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
-            return ApiResponse(remove_password(serializer.data), 200, "User updated successfully").build()
+            return ApiResponse(remove_password(serializer.data), 200, "User updated").build()
 
         return ApiResponse(serializer.errors, 400, "Validation error").build()
 
 
-# =====================================
-# DELETE USER (AUTH REQUIRED)
-# =====================================
 class DeleteUser(APIView):
-
-    def get_object(self, username):
-        try:
-            return UserInfo.objects.get(username=username)
-        except UserInfo.DoesNotExist:
-            return None
-
-    def get(self, request, username):
-        ok, resp = verify_token(request)
-        if not ok:
-            return resp
-
-        user = self.get_object(username)
-        if not user:
-            return ApiResponse(None, 404, "User not found").build()
-
-        serializer = UserInfoSerializer(user)
-        return ApiResponse(remove_password(serializer.data), 200, "User retrieved successfully").build()
 
     def delete(self, request, username):
         ok, resp = verify_token(request)
         if not ok:
             return resp
 
-        user = self.get_object(username)
+        user = UserInfo.objects.filter(user_name=username).first()
+
         if not user:
             return ApiResponse(None, 404, "User not found").build()
 
-        user.delete()
+        user.user_deleted = 1
+        user.save()
+
         return ApiResponse(None, 200, "User deleted successfully").build()
 
 
-# =====================================
-# LOGIN (NO AUTH)
-# =====================================
 class Login(APIView):
 
     def post(self, request):
 
-        username = request.data.get("username")
-        password = request.data.get("password")
+        username = request.data.get("user_name")
+        password = request.data.get("user_password")
 
-        try:
-            user = UserInfo.objects.get(username=username)
-        except UserInfo.DoesNotExist:
+        user = UserInfo.objects.filter(user_name=username).first()
+
+        if not user:
             return ApiResponse(None, 401, "Invalid user").build()
 
-        if not bcrypt.checkpw(password.encode(), user.password.encode()):
+        if not bcrypt.checkpw(password.encode(), user.user_password.encode()):
             return ApiResponse(None, 401, "Wrong password").build()
 
-        expiry_time = timezone.now() + timedelta(hours=settings.TOKEN_EXPIRY_HOURS)
+        expiry = timezone.now() + timedelta(hours=settings.TOKEN_EXPIRY_HOURS)
 
         payload = {
-            "username": user.username,
-            "exp": expiry_time
+            "user_name": user.user_name,
+            "exp": expiry
         }
 
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
         UserLoginInfo.objects.create(
             user=user,
-            session_key=secrets.token_hex(32),
+            login_session_id=secrets.token_hex(32),
             jwt_token=token,
-            expires_at=expiry_time
+            expires_at=expiry
         )
 
         return ApiResponse({"token": token}, 200, "Login successful").build()
 
 
-# =====================================
-# LOGOUT (AUTH REQUIRED)
-# =====================================
 class Logout(APIView):
 
     def post(self, request, username):
@@ -228,14 +179,43 @@ class Logout(APIView):
 
         session = UserLoginInfo.objects.filter(
             jwt_token=token,
-            user__username=username,
+            user__user_name=username,
             is_active=True
         ).first()
 
         if not session:
-            return ApiResponse(None, 401, "Already logged out or expired").build()
+            return ApiResponse(None, 401, "Already logged out").build()
 
         session.is_active = False
         session.save()
 
         return ApiResponse(None, 200, "Logged out successfully").build()
+
+
+class UserInfoView(APIView):
+
+    def get(self, request):
+        ok, resp = verify_token(request)
+        if not ok:
+            return resp
+
+        data = list(
+            AllUserInfo_View.objects.all().values()
+        )
+
+        for d in data:
+            d.pop("user_password", None)
+
+        return ApiResponse(data, 200, "User info view fetched").build()
+
+
+class TeamInfoView(APIView):
+
+    def get(self, request):
+        ok, resp = verify_token(request)
+        if not ok:
+            return resp
+
+        teams = TeamInfo.objects.filter(team_deleted=0).values()
+
+        return ApiResponse(list(teams), 200, "Teams fetched").build()

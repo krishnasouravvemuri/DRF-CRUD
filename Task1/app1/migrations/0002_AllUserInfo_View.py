@@ -25,21 +25,9 @@ SELECT
     li.jwt_token,
     li.is_active AS login_is_active,
     li.created_at,
-    li.expires_at,
+    li.expires_at
 
     
-    ti.team_id,
-    ti.team_name,
-    ti.team_created_by,
-    ti.team_created_datetime,
-    ti.team_deleted,
-
-    
-    tu.team_user_team_role,
-    tu.team_user_date_of_creation,
-    tu.team_user_active,
-    tu.team_user_deleted
-
 FROM app1_userinfo ui
 
 LEFT JOIN app1_userlogininfo li
