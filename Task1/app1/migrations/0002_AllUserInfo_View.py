@@ -11,7 +11,7 @@ SELECT
     ui.user_email,
     ui.user_password,
     ui.user_date_of_creation,
-    ui.user_lat_passcode_update,
+    ui.user_last_passcode_update,
     ui.user_active,
     ui.user_deleted,
     ui.user_role,
@@ -35,7 +35,7 @@ SELECT
     ti.team_deleted,
 
     
-    tu.team_uer_team_role,
+    tu.team_user_team_role,
     tu.team_user_date_of_creation,
     tu.team_user_active,
     tu.team_user_deleted
