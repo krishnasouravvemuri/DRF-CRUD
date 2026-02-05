@@ -27,7 +27,7 @@ spec:
               value: postgres
             - name: POSTGRES_PASSWORD
               value: postgres
-          volumeMounts:
+          volumeMounts: 
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
       volumes:
@@ -36,7 +36,7 @@ spec:
 
 ---
 
-# POSTGRES SERVICE  (IMPORTANT name=db)
+# POSTGRES SERVICE 
 
 apiVersion: v1
 kind: Service
